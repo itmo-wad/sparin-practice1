@@ -45,7 +45,7 @@ def login():
         return render_template("login.html", form=form)
 
     user = mongo.db.users.find_one(filter={ "username": form.username.data })
-    if user == None and check_password_hash(user.password, form.password.data):
+    if user == None or check_password_hash(user['password'], form.password.data) == False:
         return render_template("login.html", form=form, wrong_credentials=True)
 
     sessionid = str(random.randint(10**10, 10**20))
@@ -91,8 +91,10 @@ def upload():
             
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            os.mkdir(app.config['UPLOAD_FOLDER'])
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            folder = os.path.abspath(app.config['UPLOAD_FOLDER'])
+            path = os.path.join(folder, filename)
+            os.makedirs(folder, exist_ok=True)
+            file.save(path)
             
             flash('Successfully saved', 'success')
             return redirect(url_for('uploaded_file', filename=filename))
