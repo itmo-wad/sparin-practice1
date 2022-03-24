@@ -1,12 +1,18 @@
+import os
 import random
-from flask import Flask, abort, make_response, redirect, render_template, request, url_for
+from flask import Flask, abort, flash, make_response, redirect, render_template, request, send_file, send_from_directory, url_for
 from flask_pymongo import PyMongo
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from LoginForm import LoginForm
 from SignUpForm import SignUpForm
 
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/hw2"
+app.config['UPLOAD_FOLDER'] = './src/uploaded/'
+app.config['SECRET_KEY'] = 'the random string'
 mongo = PyMongo(app)
 
 active_sessions = {}
@@ -57,12 +63,49 @@ def profile():
 
     return render_template("profile.html")
 
-
 @app.route("/logout")
 def logout():
     resp = make_response(redirect("/"))
     resp.set_cookie('sessionid', '', expires=0)
     return resp
+
+@app.route("/upload", methods=["POST","GET"])
+def upload():
+    sessionid = request.cookies.get('sessionid', "")
+    if sessionid not in active_sessions:
+        abort(403)
+
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part', 'danger')
+            return redirect(request.url)
+            
+        file = request.files['file']
+        if file.filename == '':
+            flash('No selected file', 'danger')
+            return redirect(request.url)
+            
+        if not allowed_file(file.filename):
+            flash('Invalid file extension', 'danger')
+            return redirect(request.url)
+            
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            os.mkdir(app.config['UPLOAD_FOLDER'])
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            
+            flash('Successfully saved', 'success')
+            return redirect(url_for('uploaded_file', filename=filename))
+            
+    return render_template("upload.html")
+
+@app.route('/uploaded/<filename>')
+def uploaded_file(filename):
+    file_location = os.path.abspath(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    return send_file(file_location)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 if __name__ == "__main__":
     app.run(host='localhost', port=5000, debug=True)
