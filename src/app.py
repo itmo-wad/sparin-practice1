@@ -10,7 +10,7 @@ from SignUpForm import SignUpForm
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/hw2"
+app.config["MONGO_URI"] = "mongodb://localhost:27017/practice-1"
 app.config['UPLOAD_FOLDER'] = './src/uploaded/'
 app.config['SECRET_KEY'] = 'the random string'
 mongo = PyMongo(app)
