@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Upload images{% endblock %}</h1>
+{% endblock %}
+
+
+{% block content %}
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+    <input type="file" accept="image/png, image/jpeg">
+    <input type=submit value=upload>
+</form>
+{% endblock %}
